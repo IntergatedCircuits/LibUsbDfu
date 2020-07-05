@@ -4,14 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LibUsbDotNet;
-using DeviceProgramming;
 using DeviceProgramming.Dfu;
 using LibUsbDotNet.Info;
 using LibUsbDotNet.Main;
 
 namespace LibUsbDfu
 {
-    public class LibUsbDfuDevice : DeviceProgramming.Dfu.Device, IDisposable
+    public class Device : DeviceProgramming.Dfu.Device, IDisposable
     {
         private byte configIndex;
         private byte interfaceIndex;
@@ -27,7 +26,7 @@ namespace LibUsbDfu
 
         public UsbRegistry UsbRegistryInfo { get { return device.UsbRegistryInfo; } }
 
-        private LibUsbDfuDevice(UsbDevice dev, byte conf, byte interf)
+        private Device(UsbDevice dev, byte conf, byte interf)
         {
             this.configIndex = conf;
             this.interfaceIndex = interf;
@@ -59,7 +58,7 @@ namespace LibUsbDfu
         /// <param name="registry">The input USB registry of a connected device</param>
         /// <param name="dfuDevice">The opened DFU device in case of success</param>
         /// <returns>True if the DFU device is successfully opened</returns>
-        public static bool TryOpen(UsbRegistry registry, out LibUsbDfuDevice dfuDevice)
+        public static bool TryOpen(UsbRegistry registry, out Device dfuDevice)
         {
             dfuDevice = null;
             UsbDevice dev;
@@ -106,7 +105,7 @@ namespace LibUsbDfu
                 {
                     throw new ArgumentException("The device doesn't have valid DFU interface");
                 }
-                dfuDevice = new LibUsbDfuDevice(dev, cfIndex, ifIndex);
+                dfuDevice = new Device(dev, cfIndex, ifIndex);
                 return true;
             }
             catch (Exception)

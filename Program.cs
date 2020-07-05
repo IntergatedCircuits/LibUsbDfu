@@ -1,4 +1,4 @@
-using DeviceProgramming.Dfu;
+using DeviceProgramming;
 using DeviceProgramming.Memory;
 using DeviceProgramming.FileFormat;
 using LibUsbDotNet;
@@ -29,13 +29,13 @@ namespace LibUsbDfu
         /// </summary>
         /// <param name="deviceList"></param>
         /// <returns></returns>
-        private static List<LibUsbDfuDevice> GetDfuDevices(UsbRegDeviceList deviceList)
+        private static List<Device> GetDfuDevices(UsbRegDeviceList deviceList)
         {
-            List<LibUsbDfuDevice> devs = new List<LibUsbDfuDevice>();
+            List<Device> devs = new List<Device>();
             foreach (UsbRegistry item in deviceList)
             {
-                LibUsbDfuDevice dev;
-                if (LibUsbDfuDevice.TryOpen(item, out dev))
+                Device dev;
+                if (Device.TryOpen(item, out dev))
                 {
                     devs.Add(dev);
                 }
@@ -50,7 +50,7 @@ namespace LibUsbDfu
         /// <param name="vid"></param>
         /// <param name="pid"></param>
         /// <returns></returns>
-        private static LibUsbDfuDevice GetDevice(UsbRegDeviceList deviceList, int vid, int pid)
+        private static Device GetDevice(UsbRegDeviceList deviceList, int vid, int pid)
         {
             var registries = deviceList.FindAll(new UsbDeviceFinder(vid, pid));
             var devs = GetDfuDevices(registries);
