@@ -240,7 +240,7 @@ namespace LibUsbDfu
             }
             else
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("The underlying USB device driver doesn't support bus reset.");
             }
         }
     }
