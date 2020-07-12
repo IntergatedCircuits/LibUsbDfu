@@ -24,7 +24,10 @@ namespace LibUsbDfu
         private UsbInterfaceInfo InterfaceInfo { get { return ConfigInfo.InterfaceInfoList[interfaceIndex]; } }
         private byte InterfaceID { get { return InterfaceInfo.Descriptor.InterfaceID; } }
 
-        public UsbRegistry UsbRegistryInfo { get { return device.UsbRegistryInfo; } }
+        public override string ToString()
+        {
+            return device.UsbRegistryInfo.DevicePath;
+        }
 
         private Device(UsbDevice dev, byte conf, byte interf)
         {

@@ -69,7 +69,7 @@ namespace LibUsbDfu
             // if more than one are connected, print a warning, and use the first on the list
             else if (devs.Count > 1)
             {
-                Console.WriteLine("Warning: More than one device found, defaulting to {0}.", devs[0].UsbRegistryInfo.DevicePath);
+                Console.WriteLine("Warning: More than one device found, defaulting to {0}.", devs[0]);
                 for (int i = 1; i < devs.Count; i++)
                 {
                     devs[i].Close();
