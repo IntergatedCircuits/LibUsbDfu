@@ -7,6 +7,7 @@ using LibUsbDotNet;
 using DeviceProgramming.Dfu;
 using LibUsbDotNet.Info;
 using LibUsbDotNet.Main;
+using System.Threading;
 
 namespace LibUsbDfu
 {
@@ -207,8 +208,24 @@ namespace LibUsbDfu
 
         protected void ControlTransfer(UsbSetupPacket setupPacket, object buffer, int bufferLength)
         {
-            int lengthTransferred;
-            device.ControlTransfer(ref setupPacket, buffer, bufferLength, out lengthTransferred);
+            int retries = 0;
+            do
+            {
+                int lengthTransferred;
+                // check for transfer success:
+                // 1. that the request isn't STALLed / NACKed
+                // 2. that the correct number of bytes were received / transmitted
+                if (device.ControlTransfer(ref setupPacket, buffer, bufferLength, out lengthTransferred) &&
+                    (lengthTransferred == bufferLength))
+                {
+                    return;
+                }
+                // device/bus error, let's hope it's transitional only
+                Thread.Sleep(10);
+            } while (retries++ < 10);
+
+            // elevate persistent error
+            throw new ApplicationException(String.Format("Failed to perform control transfer ({0}) to target {1}", setupPacket, this));
         }
 
         public override void Close()
