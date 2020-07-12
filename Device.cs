@@ -146,8 +146,7 @@ namespace LibUsbDfu
                     // fallback to raw USB transfer
                     var s = new UsbSetupPacket(0x20, 0x0a, 0, InterfaceID, 1);
                     byte[] buffer = new byte[1];
-                    int len;
-                    device.ControlTransfer(ref s, buffer, buffer.Length, out len);
+                    ControlTransfer(s, buffer, buffer.Length);
                     return buffer[0];
                 }
             }
@@ -167,8 +166,7 @@ namespace LibUsbDfu
                 {
                     // fallback to raw USB transfer
                     UsbSetupPacket s = new UsbSetupPacket(0x20, 0x0b, value, InterfaceID, 0);
-                    int len;
-                    device.ControlTransfer(ref s, null, 0, out len);
+                    ControlTransfer(s, null, 0);
                 }
             }
         }
@@ -189,22 +187,25 @@ namespace LibUsbDfu
         public override void ControlTransfer(Request request, ushort value = 0)
         {
             UsbSetupPacket s = new UsbSetupPacket(0x21, (byte)request, value, InterfaceID, 0);
-            int len;
-            device.ControlTransfer(ref s, null, 0, out len);
+            ControlTransfer(s, null, 0);
         }
 
         public override void ControlTransfer(Request request, ushort value, byte[] outdata)
         {
             UsbSetupPacket s = new UsbSetupPacket(0x21, (byte)request, value, InterfaceID, outdata.Length);
-            int len;
-            device.ControlTransfer(ref s, outdata, outdata.Length, out len);
+            ControlTransfer(s, outdata, outdata.Length);
         }
 
         public override void ControlTransfer(Request request, ushort value, ref byte[] indata)
         {
             UsbSetupPacket s = new UsbSetupPacket(0xa1, (byte)request, value, InterfaceID, indata.Length);
-            int len;
-            device.ControlTransfer(ref s, indata, indata.Length, out len);
+            ControlTransfer(s, indata, indata.Length);
+        }
+
+        public void ControlTransfer(UsbSetupPacket setupPacket, object buffer, int bufferLength)
+        {
+            int lengthTransferred;
+            device.ControlTransfer(ref setupPacket, buffer, bufferLength, out lengthTransferred);
         }
 
         public override void Close()
