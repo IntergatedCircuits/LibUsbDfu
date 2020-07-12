@@ -30,20 +30,6 @@ namespace LibUsbDfu
             return device.UsbRegistryInfo.DevicePath;
         }
 
-        private Device(UsbDevice dev, byte conf, byte interf)
-        {
-            this.configIndex = conf;
-            this.interfaceIndex = interf;
-            this.device = dev;
-
-            this.dfuDesc = new FunctionalDescriptor(InterfaceInfo.CustomDescriptors[0]);
-
-            this.info = new Identification((ushort)device.Info.Descriptor.VendorID,
-                (ushort)device.Info.Descriptor.ProductID,
-                (ushort)device.Info.Descriptor.BcdDevice,
-                dfuDesc.bcdDFUVersion);
-        }
-
         /// <summary>
         /// Disposes the underlying non-managed resources of the device.
         /// </summary>
@@ -54,6 +40,60 @@ namespace LibUsbDfu
             {
                 d.Dispose();
             }
+        }
+
+        /// <summary>
+        /// Gets one (or none) DFU device from the device list with the specified parameters.
+        /// (If no exact match found, a second round of search uses only the Vendor ID.)
+        /// </summary>
+        /// <param name="deviceList">The device list to use</param>
+        /// <param name="vid">Vendor ID of the USB device</param>
+        /// <param name="pid">Product ID of the USB device</param>
+        /// <returns>The first DFU device that matched the parameters</returns>
+        public static Device OpenFirst(UsbRegDeviceList deviceList, int vid, int pid)
+        {
+            var registries = deviceList.FindAll(new UsbDeviceFinder(vid, pid));
+            var devs = OpenAll(registries);
+
+            // it's possible that the device is already in DFU mode, in which case only the VID has to match
+            if (devs.Count == 0)
+            {
+                registries = deviceList.FindAll(new UsbDeviceFinder(vid));
+                devs = OpenAll(registries);
+            }
+
+            if (devs.Count == 0)
+            {
+                throw new ArgumentException(String.Format("No DFU device was found with {0:X}:{1:X}", vid, pid));
+            }
+            // if more than one are connected, print a warning, and use the first on the list
+            else if (devs.Count > 1)
+            {
+                for (int i = 1; i < devs.Count; i++)
+                {
+                    devs[i].Close();
+                }
+            }
+            return devs[0];
+        }
+
+        /// <summary>
+        /// Finds and opens all DFU devices from the device list.
+        /// </summary>
+        /// <param name="deviceList">The device list to use</param>
+        /// <returns>A list of opened DFU devices</returns>
+        public static List<Device> OpenAll(UsbRegDeviceList deviceList)
+        {
+            List<Device> devs = new List<Device>();
+            foreach (UsbRegistry item in deviceList)
+            {
+                Device dev;
+                if (Device.TryOpen(item, out dev))
+                {
+                    devs.Add(dev);
+                }
+            }
+            return devs;
         }
 
         /// <summary>
@@ -118,6 +158,20 @@ namespace LibUsbDfu
                 d.Dispose();
                 return false;
             }
+        }
+
+        private Device(UsbDevice dev, byte conf, byte interf)
+        {
+            this.configIndex = conf;
+            this.interfaceIndex = interf;
+            this.device = dev;
+
+            this.dfuDesc = new FunctionalDescriptor(InterfaceInfo.CustomDescriptors[0]);
+
+            this.info = new Identification((ushort)device.Info.Descriptor.VendorID,
+                (ushort)device.Info.Descriptor.ProductID,
+                (ushort)device.Info.Descriptor.BcdDevice,
+                dfuDesc.bcdDFUVersion);
         }
 
         private static bool IsDfuInterface(UsbInterfaceInfo iinfo)

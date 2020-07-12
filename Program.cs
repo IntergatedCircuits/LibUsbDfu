@@ -24,60 +24,6 @@ namespace LibUsbDfu
         private static Regex VersionRegex = new Regex
             (@"^(?<major>[0-9]{1,2})\.(?<minor>[0-9]{1,2})$", RegexOptions.Compiled);
 
-        /// <summary>
-        /// Finds and opens the DFU devices from the device list.
-        /// </summary>
-        /// <param name="deviceList"></param>
-        /// <returns></returns>
-        private static List<Device> GetDfuDevices(UsbRegDeviceList deviceList)
-        {
-            List<Device> devs = new List<Device>();
-            foreach (UsbRegistry item in deviceList)
-            {
-                Device dev;
-                if (Device.TryOpen(item, out dev))
-                {
-                    devs.Add(dev);
-                }
-            }
-            return devs;
-        }
-
-        /// <summary>
-        /// Gets one (or none) DFU device from the device list with the specified parameters.
-        /// </summary>
-        /// <param name="deviceList"></param>
-        /// <param name="vid"></param>
-        /// <param name="pid"></param>
-        /// <returns></returns>
-        private static Device GetDevice(UsbRegDeviceList deviceList, int vid, int pid)
-        {
-            var registries = deviceList.FindAll(new UsbDeviceFinder(vid, pid));
-            var devs = GetDfuDevices(registries);
-
-            // it's possible that the device is already in DFU mode, in which case only the VID has to match
-            if (devs.Count == 0)
-            {
-                registries = deviceList.FindAll(new UsbDeviceFinder(vid));
-                devs = GetDfuDevices(registries);
-            }
-
-            if (devs.Count == 0)
-            {
-                throw new ArgumentException(String.Format("No DFU device was found with {0:X}:{1:X}", vid, pid));
-            }
-            // if more than one are connected, print a warning, and use the first on the list
-            else if (devs.Count > 1)
-            {
-                Console.WriteLine("Warning: More than one device found, defaulting to {0}.", devs[0]);
-                for (int i = 1; i < devs.Count; i++)
-                {
-                    devs[i].Close();
-                }
-            }
-            return devs[0];
-        }
-
         static void Main(string[] args)
         {
             string filePath = null;
@@ -201,7 +147,7 @@ namespace LibUsbDfu
                 }
 
                 // find the DFU device
-                device = GetDevice(UsbDevice.AllDevices, vid, pid);
+                device = Device.OpenFirst(UsbDevice.AllDevices, vid, pid);
                 device.DeviceError += printDevError;
 
                 if (isDfuFile)
@@ -236,7 +182,7 @@ namespace LibUsbDfu
                     if (!device.IsOpen())
                     {
                         device.DeviceError -= printDevError;
-                        device = GetDevice(UsbDevice.AllDevices, vid, pid);
+                        device = Device.OpenFirst(UsbDevice.AllDevices, vid, pid);
                         device.DeviceError += printDevError;
                     }
                 }
