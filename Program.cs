@@ -1,4 +1,3 @@
-using DeviceProgramming;
 using DeviceProgramming.Memory;
 using DeviceProgramming.FileFormat;
 using LibUsbDotNet;
@@ -9,10 +8,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace LibUsbDfu
 {
@@ -23,6 +20,24 @@ namespace LibUsbDfu
 
         private static Regex VersionRegex = new Regex
             (@"^(?<major>[0-9]{1,2})\.(?<minor>[0-9]{1,2})$", RegexOptions.Compiled);
+
+        // VID & PID of built-in STM32 Bootloader image.
+        private static int STM32_DFU_VID = 0x0483;
+        private static int STM32_DFU_PID = 0xDF11;
+
+        // Maximum number of retries before exiting with failure.
+        private static int MAX_RETRIES = 15;
+
+        private struct DfuOptions
+        {
+            public int vid;
+            public int pid;
+            public int vmajor;
+            public int vminor;
+            public bool isDfuFile;
+            public string fileExt;
+            public string filePath;
+        }
 
         /// <summary>
         /// Finds and opens the DFU devices from the device list.
@@ -151,6 +166,22 @@ namespace LibUsbDfu
                 Environment.Exit(-1);
             }
 
+            var options = new DfuOptions
+            {
+                vid = vid,
+                pid = pid,
+                vmajor = vmajor,
+                vminor = vminor,
+                isDfuFile = isDfuFile,
+                filePath = filePath,
+                fileExt = fileExt,
+            };
+
+            FlashDevice(options);
+        }
+
+        static void FlashDevice(DfuOptions opts, int retryCount = 0)
+        {
             // DFU device event printers
             int prevCursor = -1;
             EventHandler<ProgressChangedEventArgs> printDownloadProgress = (obj, e) =>
@@ -170,29 +201,29 @@ namespace LibUsbDfu
             Device device = null;
             try
             {
-                Version fileVer = new Version(vmajor, vminor);
+                Version fileVer = new Version(opts.vmajor, opts.vminor);
                 Dfu.FileContent dfuFileData = null;
                 RawMemory memory = null;
 
                 // find the matching file parser by extension
-                if (isDfuFile)
+                if (opts.isDfuFile)
                 {
-                    dfuFileData = Dfu.ParseFile(filePath);
+                    dfuFileData = Dfu.ParseFile(opts.filePath);
                     Console.WriteLine("DFU image parsed successfully.");
 
                     // DFU file specifies VID, PID and version, so override any arguments
-                    vid = dfuFileData.DeviceInfo.VendorId;
-                    pid = dfuFileData.DeviceInfo.ProductId;
+                    opts.vid = dfuFileData.DeviceInfo.VendorId;
+                    opts.pid = dfuFileData.DeviceInfo.ProductId;
                     fileVer = dfuFileData.DeviceInfo.ProductVersion;
                 }
-                else if (IntelHex.IsExtensionSupported(fileExt))
+                else if (IntelHex.IsExtensionSupported(opts.fileExt))
                 {
-                    memory = IntelHex.ParseFile(filePath);
+                    memory = IntelHex.ParseFile(opts.filePath);
                     Console.WriteLine("Intel HEX image parsed successfully.");
                 }
-                else if (SRecord.IsExtensionSupported(fileExt))
+                else if (SRecord.IsExtensionSupported(opts.fileExt))
                 {
-                    memory = SRecord.ParseFile(filePath);
+                    memory = SRecord.ParseFile(opts.filePath);
                     Console.WriteLine("SRecord image parsed successfully.");
                 }
                 else
@@ -201,10 +232,10 @@ namespace LibUsbDfu
                 }
 
                 // find the DFU device
-                device = GetDevice(UsbDevice.AllDevices, vid, pid);
+                device = GetDevice(UsbDevice.AllDevices, opts.vid, opts.pid);
                 device.DeviceError += printDevError;
 
-                if (isDfuFile)
+                if (opts.isDfuFile)
                 {
                     // verify protocol version
                     if (dfuFileData.DeviceInfo.DfuVersion != device.DfuDescriptor.DfuVersion)
@@ -232,11 +263,15 @@ namespace LibUsbDfu
                     Console.WriteLine("Device found in application mode, reconfiguring device to DFU mode...");
                     device.Reconfigure();
 
+                    // Wait for the reconfigure to bounce the device.
+                    Thread.Sleep(500);
+
                     // in case the device detached, we must find the DFU mode device
                     if (!device.IsOpen())
                     {
                         device.DeviceError -= printDevError;
-                        device = GetDevice(UsbDevice.AllDevices, vid, pid);
+                        // device = GetDevice(UsbDevice.AllDevices, opts.vid, opts.pid);
+                        device = GetDevice(UsbDevice.AllDevices, STM32_DFU_VID, STM32_DFU_PID);
                         device.DeviceError += printDevError;
                     }
                 }
@@ -247,7 +282,7 @@ namespace LibUsbDfu
 
                 // perform upgrade
                 device.DownloadProgressChanged += printDownloadProgress;
-                if (isDfuFile)
+                if (opts.isDfuFile)
                 {
                     device.DownloadFirmware(dfuFileData);
                 }
@@ -264,7 +299,19 @@ namespace LibUsbDfu
             catch (Exception e)
             {
                 Console.Error.WriteLine("Device Firmware Upgrade failed with exception: {0}.", e.ToString());
-                Environment.Exit(-1);
+                if (retryCount < MAX_RETRIES)
+                {
+                    Thread.Sleep(1000);
+                    if (device != null)
+                    {
+                        device.Close();
+                    }
+                    FlashDevice(opts, retryCount + 1);
+                }
+                else
+                {
+                    Environment.Exit(-1);
+                }
             }
             finally
             {
