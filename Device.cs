@@ -125,12 +125,12 @@ namespace LibUsbDfu
                 (iinfo.CustomDescriptors[0].Length == FunctionalDescriptor.Size);
         }
 
-        public override byte NumberOfAlternateSettings
+        protected override byte NumberOfAlternateSettings
         {
             get { return (byte)ConfigInfo.InterfaceInfoList.Count; }
         }
 
-        public override byte AlternateSetting
+        protected override byte AlternateSetting
         {
             get
             {
@@ -171,12 +171,12 @@ namespace LibUsbDfu
             }
         }
 
-        public override byte iAlternateSetting(byte altSetting)
+        protected override byte iAlternateSetting(byte altSetting)
         {
             return (byte)ConfigInfo.InterfaceInfoList[altSetting].Descriptor.StringIndex;
         }
 
-        public override string GetString(byte iString)
+        protected override string GetString(byte iString)
         {
             string result;
             if (!device.GetString(out result, device.Info.CurrentCultureLangID, iString))
@@ -184,25 +184,25 @@ namespace LibUsbDfu
             return result;
         }
 
-        public override void ControlTransfer(Request request, ushort value = 0)
+        protected override void ControlTransfer(Request request, ushort value = 0)
         {
             UsbSetupPacket s = new UsbSetupPacket(0x21, (byte)request, value, InterfaceID, 0);
             ControlTransfer(s, null, 0);
         }
 
-        public override void ControlTransfer(Request request, ushort value, byte[] outdata)
+        protected override void ControlTransfer(Request request, ushort value, byte[] outdata)
         {
             UsbSetupPacket s = new UsbSetupPacket(0x21, (byte)request, value, InterfaceID, outdata.Length);
             ControlTransfer(s, outdata, outdata.Length);
         }
 
-        public override void ControlTransfer(Request request, ushort value, ref byte[] indata)
+        protected override void ControlTransfer(Request request, ushort value, ref byte[] indata)
         {
             UsbSetupPacket s = new UsbSetupPacket(0xa1, (byte)request, value, InterfaceID, indata.Length);
             ControlTransfer(s, indata, indata.Length);
         }
 
-        public void ControlTransfer(UsbSetupPacket setupPacket, object buffer, int bufferLength)
+        protected void ControlTransfer(UsbSetupPacket setupPacket, object buffer, int bufferLength)
         {
             int lengthTransferred;
             device.ControlTransfer(ref setupPacket, buffer, bufferLength, out lengthTransferred);
@@ -219,7 +219,7 @@ namespace LibUsbDfu
             return device.IsOpen;
         }
 
-        public override void BusReset()
+        protected override void BusReset()
         {
             if (device is IUsbDevice)
             {
