@@ -181,7 +181,11 @@ namespace LibUsbDfu
                     // in case the device detached, we must find the DFU mode device
                     if (!device.IsOpen())
                     {
+                        // clean up old device first
                         device.DeviceError -= printDevError;
+                        device.Dispose();
+                        device = null;
+
                         device = Device.OpenFirst(UsbDevice.AllDevices, vid, pid);
                         device.DeviceError += printDevError;
                     }
@@ -201,11 +205,21 @@ namespace LibUsbDfu
                 {
                     device.DownloadFirmware(memory);
                 }
+                device.DownloadProgressChanged -= printDownloadProgress;
 
                 Console.WriteLine("Download successful, manifesting update...");
                 device.Manifest();
 
+                // if the device detached, clean up
+                if (!device.IsOpen())
+                {
+                    device.DeviceError -= printDevError;
+                    device.Dispose();
+                    device = null;
+                }
+
                 // TODO find device again to verify new version
+                Console.WriteLine("The device has been successfully upgraded.");
             }
             catch (Exception e)
             {
@@ -216,7 +230,7 @@ namespace LibUsbDfu
             {
                 if (device != null)
                 {
-                    device.Close();
+                    device.Dispose();
                 }
             }
         }

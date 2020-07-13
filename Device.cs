@@ -35,11 +35,30 @@ namespace LibUsbDfu
         /// </summary>
         public void Dispose()
         {
-            var d = device as IDisposable;
-            if (d != null)
+            // Dispose of unmanaged resources.
+            Dispose(true);
+            // Suppress finalization.
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
             {
-                d.Dispose();
+                // called by Dispose()
+                // free managed resources (disposable member objects, expensive resources)
+                var d = device as IDisposable;
+                if (d != null)
+                {
+                    d.Dispose();
+                }
             }
+            else
+            {
+                // called from a ~finalizer()
+            }
+
+            // free unmanaged resources
         }
 
         /// <summary>
@@ -290,7 +309,6 @@ namespace LibUsbDfu
         public override void Close()
         {
             device.Close();
-            Dispose();
         }
 
         public override bool IsOpen()
