@@ -202,7 +202,8 @@ namespace LibUsbDfu
                 else
                 {
                     // fallback to raw USB transfer
-                    var s = new UsbSetupPacket(0x20, 0x0a, 0, InterfaceID, 1);
+                    var rtype = new RequestType(RequestType.Direction.In, RequestType.Type.Standard, RequestType.Recipient.Interface);
+                    var s = new UsbSetupPacket(rtype, (byte)StandardRequest.GetInterface, 0, InterfaceID, 1);
                     byte[] buffer = new byte[1];
                     ControlTransfer(s, buffer, buffer.Length);
                     return buffer[0];
@@ -223,7 +224,8 @@ namespace LibUsbDfu
                 else
                 {
                     // fallback to raw USB transfer
-                    UsbSetupPacket s = new UsbSetupPacket(0x20, 0x0b, value, InterfaceID, 0);
+                    var rtype = new RequestType(RequestType.Direction.Out, RequestType.Type.Standard, RequestType.Recipient.Interface);
+                    var s = new UsbSetupPacket(rtype, (byte)StandardRequest.SetInterface, value, InterfaceID, 0);
                     ControlTransfer(s, null, 0);
                 }
             }
@@ -244,19 +246,22 @@ namespace LibUsbDfu
 
         protected override void ControlTransfer(Request request, ushort value = 0)
         {
-            UsbSetupPacket s = new UsbSetupPacket(0x21, (byte)request, value, InterfaceID, 0);
+            var rtype = new RequestType(RequestType.Direction.Out, RequestType.Type.Class, RequestType.Recipient.Interface);
+            var s = new UsbSetupPacket(rtype, (byte)request, value, InterfaceID, 0);
             ControlTransfer(s, null, 0);
         }
 
         protected override void ControlTransfer(Request request, ushort value, byte[] outdata)
         {
-            UsbSetupPacket s = new UsbSetupPacket(0x21, (byte)request, value, InterfaceID, outdata.Length);
+            var rtype = new RequestType(RequestType.Direction.Out, RequestType.Type.Class, RequestType.Recipient.Interface);
+            var s = new UsbSetupPacket(rtype, (byte)request, value, InterfaceID, outdata.Length);
             ControlTransfer(s, outdata, outdata.Length);
         }
 
         protected override void ControlTransfer(Request request, ushort value, ref byte[] indata)
         {
-            UsbSetupPacket s = new UsbSetupPacket(0xa1, (byte)request, value, InterfaceID, indata.Length);
+            var rtype = new RequestType(RequestType.Direction.In, RequestType.Type.Class, RequestType.Recipient.Interface);
+            var s = new UsbSetupPacket(rtype, (byte)request, value, InterfaceID, indata.Length);
             ControlTransfer(s, indata, indata.Length);
         }
 
