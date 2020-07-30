@@ -12,10 +12,10 @@ namespace LibUsbDfu
 {
     class Program
     {
-        private static Regex UsbIdRegex = new Regex
+        private static readonly Regex UsbIdRegex = new Regex
             (@"^(?<vid>[a-fA-F0-9]{1,4}):(?<pid>[a-fA-F0-9]{1,4})$", RegexOptions.Compiled);
 
-        private static Regex VersionRegex = new Regex
+        private static readonly Regex VersionRegex = new Regex
             (@"^(?<major>[0-9]{1,2})\.(?<minor>[0-9]{1,2})$", RegexOptions.Compiled);
 
         static void Main(string[] args)
