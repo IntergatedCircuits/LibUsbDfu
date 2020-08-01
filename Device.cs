@@ -256,8 +256,10 @@ namespace LibUsbDfu
         {
             string result;
             if (!device.GetString(out result, device.Info.CurrentCultureLangID, iString))
+            {
                 result = String.Empty;
-            return result;
+            }
+            return result.TrimEnd(new char[] { '\0' });
         }
 
         protected override void ControlTransfer(Request request, ushort value = 0)
