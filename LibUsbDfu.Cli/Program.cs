@@ -1,14 +1,14 @@
-using DeviceProgramming.Memory;
+﻿using DeviceProgramming.Memory;
 using DeviceProgramming.FileFormat;
-using LibUsbDotNet;
 using Mono.Options;
 using System;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.ComponentModel;
+using LibUsbDotNet;
 
-namespace LibUsbDfu
+namespace LibUsbDfu.Cli
 {
     class Program
     {

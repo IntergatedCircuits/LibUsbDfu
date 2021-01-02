@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Benedek Kupper</Authors>
+    <Company>IntergatedCircuits</Company>
+    <Description>C# USB DFU firmware upgrade utility using LibUsbDotNet</Description>
+    <Copyright>Copyright © Benedek Kupper 2021</Copyright>
+    <RepositoryUrl>https://github.com/IntergatedCircuits/LibUsbDfu</RepositoryUrl>
+    <PackageTags>DFU libusb firmware-update</PackageTags>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.0</FileVersion>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DeviceProgramming" Version="1.0.3" />
+    <PackageReference Include="LibUsbDotNet" Version="2.2.29" />
+  </ItemGroup>
+
+</Project>
