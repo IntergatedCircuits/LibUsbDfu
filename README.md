@@ -9,7 +9,7 @@ It accepts `.hex`, `.s19` and `.dfu` image file formats as input.
 
 ## Example
 ```
-LibUsbDfu -d 483:5740 -v 1.12 -i "newfw.hex"
+LibUsbDfu.Cli -d 483:5740 -v 1.12 -i "newfw.hex"
 ```
 ***Note:*** The USB VID:PID and version are overwritten from the `.dfu` file if that format is provided.
 
