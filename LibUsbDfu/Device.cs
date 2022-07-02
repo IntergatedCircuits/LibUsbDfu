@@ -4,6 +4,7 @@ using LibUsbDotNet;
 using DeviceProgramming.Dfu;
 using LibUsbDotNet.Info;
 using LibUsbDotNet.Main;
+using LibUsbDotNet.Descriptors;
 using System.Threading;
 
 namespace LibUsbDfu
@@ -182,7 +183,7 @@ namespace LibUsbDfu
             this.interfaceIndex = interf;
             this.device = dev;
 
-            this.dfuDesc = new FunctionalDescriptor(InterfaceInfo.CustomDescriptors[0]);
+            LoadDfuDescriptor();
 
             this.info = new Identification((ushort)device.Info.Descriptor.VendorID,
                 (ushort)device.Info.Descriptor.ProductID,
@@ -194,11 +195,83 @@ namespace LibUsbDfu
         {
             return ((byte)iinfo.Descriptor.Class == InterfaceClass) &&
                 (iinfo.Descriptor.SubClass == InterfaceSubClass) &&
-                ((iinfo.Descriptor.Protocol == InterfaceProtocol_Runtime) || (iinfo.Descriptor.Protocol == InterfaceProtocol_DFU)) &&
-                (iinfo.CustomDescriptors.Count == 1) &&
-                (iinfo.CustomDescriptors[0].Length == FunctionalDescriptor.Size);
+                ((iinfo.Descriptor.Protocol == InterfaceProtocol_Runtime) ||
+                 (iinfo.Descriptor.Protocol == InterfaceProtocol_DFU));
         }
 
+        private void LoadDfuDescriptor()
+        {
+            // try to find the functional descriptor in the custom descriptors
+            foreach (var desc in InterfaceInfo.CustomDescriptors)
+            {
+                try
+                {
+                    dfuDesc = new FunctionalDescriptor(desc);
+                    return;
+                }
+                catch (Exception)
+                {
+                }
+            }
+            // try to get it from the interface manually
+            RequestType rtype;
+            UsbSetupPacket s;
+            try
+            {
+                byte[] dbuf = new byte[FunctionalDescriptor.Size];
+                rtype = new RequestType(UsbEndpointDirection.EndpointIn,
+                    UsbRequestType.TypeStandard, UsbRequestRecipient.RecipInterface);
+                s = new UsbSetupPacket(rtype, (byte)UsbStandardRequest.GetDescriptor,
+                    FunctionalDescriptor.Type << 8, InterfaceID, FunctionalDescriptor.Size);
+                ControlTransfer(s, dbuf, dbuf.Length);
+                dfuDesc = new FunctionalDescriptor(dbuf);
+                return;
+            }
+            catch (Exception)
+            {
+            }
+
+            // read the whole configuration descriptor and extract it from there
+            byte[] buffer = new byte[ConfigInfo.Descriptor.TotalLength];
+            rtype = new RequestType(UsbEndpointDirection.EndpointIn,
+                UsbRequestType.TypeStandard, UsbRequestRecipient.RecipDevice);
+            s = new UsbSetupPacket(rtype, (byte)UsbStandardRequest.GetDescriptor,
+                2 << 8, 0, buffer.Length);
+            ControlTransfer(s, buffer, buffer.Length);
+
+            // iterate through the descriptors
+            int ifaceIndex = -1;
+            for (int i = 0; i < buffer.Length; i += buffer[i])
+            {
+                var descLength = buffer[i];
+                var descType = buffer[i + 1];
+                // we need to find the descriptor that is in the context of the current DFU interface
+                if (descType == (byte)DescriptorType.Interface)
+                {
+                    ifaceIndex = buffer[i + 2];
+                    continue;
+                }
+
+                // now we have a good candidate
+                if ((ifaceIndex == interfaceIndex) &&
+                    (descLength == FunctionalDescriptor.Size) &&
+                    (descType == FunctionalDescriptor.Type))
+                {
+                    try
+                    {
+                        byte[] dbuf = new byte[FunctionalDescriptor.Size];
+                        Array.Copy(buffer, i, dbuf, 0, dbuf.Length);
+                        dfuDesc = new FunctionalDescriptor(dbuf);
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            throw new ApplicationException(String.Format("Failed to fetch DFU Functional Descriptor from target {1}", this));
+        }
         protected override byte NumberOfAlternateSettings
         {
             get { return (byte)ConfigInfo.InterfaceInfoList.Count; }
