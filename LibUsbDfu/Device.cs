@@ -365,6 +365,11 @@ namespace LibUsbDfu
 
         protected void ControlTransfer(UsbSetupPacket setupPacket, object buffer, int bufferLength)
         {
+            if (buffer == null)
+            {
+                // workaround, only necessary on Linux
+                buffer = new byte[1];
+            }
             int retries = 0;
             do
             {
