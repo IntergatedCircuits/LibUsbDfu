@@ -28,6 +28,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Version>1.1.0</Version>
+    <Copyright>Copyright © Benedek Kupper 2022</Copyright>
   </PropertyGroup>
 
 </Project>
