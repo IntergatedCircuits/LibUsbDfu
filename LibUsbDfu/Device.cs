@@ -425,5 +425,83 @@ namespace LibUsbDfu
                 throw new NotImplementedException("The underlying USB device driver doesn't support bus reset.");
             }
         }
+
+        private string GetErrorString2(Status status)
+        {
+            string error;
+            if (status.Error == Error.Vendor)
+            {
+                error = GetString(status.iString);
+            }
+            else
+            {
+                error = status.Error.ToString();
+            }
+            return error;
+        }
+
+        public void VerifyState2(Status status, State expectedState)
+        {
+            if (status.State != expectedState)
+            {
+                if (status.State == State.Error)
+                {
+                    var e = new InvalidStateException(expectedState, status.State, GetErrorString2(status));
+                    throw e;
+                }
+                else
+                {
+                    throw new InvalidStateException(expectedState, status.State);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the initial address pointer for the upcoming Download/Upload transfers.
+        /// </summary>
+        /// <param name="address">Start address for the following transfer</param>
+        /// <returns>The DFU status after the operation</returns>
+        public Status SeSetAddress2(uint address)
+        {
+            byte[] data = new byte[5];
+            data[0] = (byte)0x21;
+            data[1] = (byte)address;
+            data[2] = (byte)(address >> 8);
+            data[3] = (byte)(address >> 16);
+            data[4] = (byte)(address >> 24);
+            Dnload(0, data);
+
+            Status status;
+            for (status = GetStatus(); status.State == State.DnloadBusy; status = GetStatus())
+            {
+                Thread.Sleep(status.PollTimeout);
+            }
+            return status;
+        }
+
+        internal byte[] ReadMemory(int address, int length)
+        {
+            if (length < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be positive");
+            }
+            if (length > 1024)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length), "Length must be less than or equal to 1024 bytes in size");
+            }
+            // ensure idle mode
+            Status status = ClearErrors();
+            VerifyState2(status, State.Idle);
+            status = SeSetAddress2((uint) address);
+            VerifyState2(status, State.DnloadIdle);
+            while (GetStatus().State != State.Idle)
+            {
+               ClrStatus();
+            }
+            byte[] r = Upload(2, (uint) length);
+            VerifyState2(status, State.DnloadIdle);
+            ResetToIdle();
+            return r;
+        }
     }
 }
