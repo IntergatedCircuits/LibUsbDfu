@@ -33,9 +33,6 @@ jobs:
       with:
         project: LibUsbDfu
 
-    - name: Push packages to NuGet.org
-      run: dotnet nuget push ~/localfeed/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
     - name: Push packages to GitHub Packages
       run: |
         dotnet nuget add source --username ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/IntergatedCircuits/index.json"
