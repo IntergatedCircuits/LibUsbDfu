@@ -1,35 +1,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFrameworks>netstandard2.0;netcoreapp3.1</TargetFrameworks>
-    <Authors>Benedek Kupper</Authors>
-    <RepositoryUrl>https://github.com/IntergatedCircuits/LibUsbDfu</RepositoryUrl>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Company>IntergatedCircuits</Company>
-    <Description>USB DFU firmware upgrade command line utility</Description>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+		<Authors>Benedek Kupper</Authors>
+		<RepositoryUrl>https://github.com/IntergatedCircuits/LibUsbDfu</RepositoryUrl>
+		<Copyright>Copyright © Benedek Kupper 2022</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Description>USB DFU firmware upgrade command line utility</Description>
+		<Version>1.1.0</Version>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Mono.Options" Version="6.6.0.161" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LibUsbDfu\LibUsbDfu.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\LibUsbDfu\LibUsbDfu.csproj" />
+		<PackageReference Include="Mono.Options" Version="6.6.0.161" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <Version>1.1.0</Version>
-    <Copyright>Copyright © Benedek Kupper 2022</Copyright>
-  </PropertyGroup>
-
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	</PropertyGroup>
 </Project>

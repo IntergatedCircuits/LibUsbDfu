@@ -1,11 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Description>C# USB DFU firmware upgrade utility using LibUsbDotNet</Description>
-		<PackageTags>DFU libusb firmware-update</PackageTags>
+		<Description>Standalone C# library for device firmware programming</Description>
+		<PackageTags>Device Firmware Programming S19 IntelHEX DFU DFUSE</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Authors>Benedek Kupper</Authors>
 		<Copyright>Copyright © Benedek Kupper 2025</Copyright>
@@ -14,7 +14,7 @@
 		<EnablePackageValidation>true</EnablePackageValidation>
 		<!-- <PackageValidationBaselineVersion>1.0.3</PackageValidationBaselineVersion> -->
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
-		<Version>1.1.0</Version>
+		<Version>1.0.3</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -22,11 +22,6 @@
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="DeviceProgramming" Version="1.0.3" />
-		<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
 	</ItemGroup>
 
 </Project>
