@@ -180,12 +180,6 @@ namespace DeviceProgramming.Dfu
             ControlTransfer(Request.Upload, blockNumber, ref block);
             return block;
         }
-        public void Upload(ushort blockNumber, ref byte[] data, int startIndex, int length)
-        {
-            byte[] block = new byte[length];
-            ControlTransfer(Request.Upload, blockNumber, ref block);
-            Array.Copy(block, 0, data, startIndex, length);
-        }
 
         public State GetState()
         {
@@ -451,6 +445,52 @@ namespace DeviceProgramming.Dfu
         }
 
         /// <summary>
+        /// Upload a block of firmware from the reconfigured DFU device.
+        /// </summary>
+        /// <param name="length">The (maximum) size of memory to upload from the device.</param>
+        /// <param name="blockNr">The starting block number of memory reading.</param>
+        /// <returns>The memory dump from the device</returns>
+        public byte[] UploadBlock(uint length, ushort blockNr = 0)
+        {
+            if (!DfuDescriptor.CanUpload)
+            {
+                throw new InvalidOperationException("The device doesn't support the upload operation.");
+            }
+            ResetToIdle();
+            byte[] block = new byte[length];
+            uint transferred = 0;
+            while (transferred < length)
+            {
+                uint transferLen;
+                if ((transferred + DfuDescriptor.TransferSize) > length)
+                {
+                    transferLen = length - transferred;
+                }
+                else
+                {
+                    transferLen = (uint)DfuDescriptor.TransferSize;
+                }
+
+                var b = Upload(blockNr, transferLen);
+                Array.Copy(b, 0, block, transferred, transferLen);
+                transferred += (uint)b.Length;
+                blockNr++;
+
+                if (b.Length < transferLen)
+                {
+                    Array.Resize(ref block, (int)transferred);
+                    break;
+                }
+            }
+            // if the last transfer was also TransferSize, add a 0 length transfer to terminate the upload
+            if (GetState() == State.UploadIdle)
+            {
+                Upload(blockNr, 0);
+            }
+            return block;
+        }
+
+        /// <summary>
         /// Download a contiguous memory segment to the idling DFU device. (DFU spec 1.1)
         /// </summary>
         /// <param name="segment"></param>
@@ -574,6 +614,16 @@ namespace DeviceProgramming.Dfu
         /// <summary>
         /// Parses the string description of a DFU alternate setting into a memory layout.
         /// </summary>
+        /// <param name="altSel">DFU alternate setting index</param>
+        /// <returns>The parsed memory layout</returns>
+        private NamedLayout ParseLayout(byte altSel)
+        {
+            return ParseLayout(GetString(iAlternateSetting(altSel)));
+        }
+
+        /// <summary>
+        /// Parses the string description of a DFU alternate setting into a memory layout.
+        /// </summary>
         /// <param name="dfuSeFormat">DFU alternate setting string description</param>
         /// <returns>The parsed memory layout</returns>
         private NamedLayout ParseLayout(string dfuSeFormat)
@@ -640,8 +690,7 @@ namespace DeviceProgramming.Dfu
                 byte altSel = memoryWithAltSel.Key;
                 var memory = memoryWithAltSel.Value;
 
-                string ml = GetString(iAlternateSetting(altSel));
-                var layout = ParseLayout(ml);
+                var layout = ParseLayout(altSel);
                 int segNo = 0;
                 int lastSeg = memory.Segments.Count - 1;
 
@@ -776,8 +825,7 @@ namespace DeviceProgramming.Dfu
                 // go through the available memories (each of which is an alternate setting)
                 for (altSel = 0; altSel < NumberOfAlternateSettings; altSel++)
                 {
-                    string ml = GetString(iAlternateSetting(altSel));
-                    var layout = ParseLayout(ml);
+                    var layout = ParseLayout(altSel);
                     int segCount = 0;
                     var newMem = new NamedMemory(layout.Name);
 
@@ -813,6 +861,56 @@ namespace DeviceProgramming.Dfu
             }
 
             return sortedMemory;
+        }
+
+        /// <summary>
+        /// Upload part of the firmware image from the reconfigured DFU device.
+        /// </summary>
+        /// <param name="mblock">Memory block to read from</param>
+        /// <returns>The memory segment provided by the device</returns>
+        public Segment UploadBlock(Block mblock)
+        {
+            // perform a bunch of tests first
+            if (DfuDescriptor.DfuVersion != Protocol.SeVersion)
+            {
+                throw new InvalidOperationException("The device doesn't support the DFUSE protocol.");
+            }
+
+            byte altSel = 0;
+            for (; altSel < NumberOfAlternateSettings; altSel++)
+            {
+                var layout = ParseLayout(altSel);
+                if ((mblock.StartAddress >= layout.StartAddress) && (mblock.EndAddress <= layout.EndAddress))
+                {
+                    foreach (var block in layout.Blocks)
+                    {
+                        if (block.Overlaps(mblock) && !block.Permissions.IsReadable())
+                        {
+                            throw new ArgumentOutOfRangeException("mblock", mblock, "The provided memory block is not readable on the target device.");
+                        }
+                    }
+                    break;
+                }
+            }
+            if (altSel == NumberOfAlternateSettings)
+            {
+                throw new ArgumentOutOfRangeException("mblock", mblock, "The provided memory block is not available on the target device.");
+            }
+
+            // select this memory layout for upload
+            AlternateSetting = altSel;
+
+            // select start address
+            ResetToIdle();
+
+            Status status = SeSetAddress((uint)mblock.StartAddress);
+            VerifyState(status, State.DnloadIdle);
+
+            // perform memory dump
+            // TODO: ensure block number doesn't overflow
+            byte[] memory = UploadBlock((uint)mblock.Size, 2);
+
+            return new Segment(mblock.StartAddress, memory);
         }
         #endregion
     }

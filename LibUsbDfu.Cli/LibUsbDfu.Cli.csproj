@@ -8,7 +8,7 @@
 		<Copyright>Copyright © Benedek Kupper 2022</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Description>USB DFU firmware upgrade command line utility</Description>
-		<Version>1.1.0</Version>
+		<Version>1.1.1</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

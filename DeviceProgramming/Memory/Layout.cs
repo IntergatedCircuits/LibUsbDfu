@@ -8,9 +8,9 @@ namespace DeviceProgramming.Memory
     /// </summary>
     public class Layout
     {
-        public UInt64 StartAddress 
-        { 
-            get 
+        public UInt64 StartAddress
+        {
+            get
             {
                 if (Blocks.Count == 0)
                 {
