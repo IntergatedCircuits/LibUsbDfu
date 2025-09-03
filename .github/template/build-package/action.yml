@@ -21,3 +21,21 @@ runs:
     - name: Pack ${{ inputs.project }} to local feed
       shell: bash
       run: dotnet pack ${{ inputs.project }}/${{ inputs.project }}.csproj -c Release -o ~/localfeed
+
+    - name: Check package version conflict
+      shell: bash
+      run: |
+        PKG=${{ inputs.project }}
+        # Get all package search results (local + NuGet)
+        SEARCH_RESULTS=$(dotnet package search $PKG --exact-match --verbosity minimal | grep -E "^\|\s*$PKG\s*\|")
+        # Extract all versions into an array
+        VERSIONS=($(echo "$SEARCH_RESULTS" | awk -F'|' '{gsub(/ /,"",$3); print $3}'))
+        LOCAL_VERSION="${VERSIONS[0]}"
+        # Check if LOCAL_VERSION appears in any of the following versions
+        for ((i=1; i<${#VERSIONS[@]}; i++)); do
+          if [[ "${VERSIONS[$i]}" == "$LOCAL_VERSION" ]]; then
+            echo "Package $PKG version $LOCAL_VERSION already exists on nuget.org. Please increment the version."
+            exit 1
+          fi
+        done
+        echo "No version conflict for $PKG version $LOCAL_VERSION."
