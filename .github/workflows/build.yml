@@ -1,0 +1,41 @@
+name: .NET build
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Add local NuGet feed
+      run: |
+        mkdir -p ~/localfeed
+        dotnet nuget add source ~/localfeed --name LocalFeed
+    
+    - name: Build DeviceProgramming
+      uses: ./.github/template/build-package
+      with:
+        project: DeviceProgramming
+        
+    - name: Build LibUsbDfu
+      uses: ./.github/template/build-package
+      with:
+        project: LibUsbDfu
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build LibUsbDfu.Cli
+      run: dotnet build LibUsbDfu.Cli/LibUsbDfu.Cli.csproj -c Release --no-restore
