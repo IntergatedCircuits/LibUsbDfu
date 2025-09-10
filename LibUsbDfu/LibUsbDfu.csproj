@@ -14,7 +14,7 @@
 		<EnablePackageValidation>true</EnablePackageValidation>
 		<!-- <PackageValidationBaselineVersion>1.0.3</PackageValidationBaselineVersion> -->
 		<EnableNETAnalyzers>True</EnableNETAnalyzers>
-		<Version>1.1.1</Version>
+		<Version>1.1.2</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DeviceProgramming" Version="1.0.4" />
+		<PackageReference Include="DeviceProgramming" Version="1.0.5" />
 		<PackageReference Include="LibUsbDotNet" Version="2.2.29" />
 	</ItemGroup>
 

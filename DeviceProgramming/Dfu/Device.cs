@@ -782,20 +782,15 @@ namespace DeviceProgramming.Dfu
                             totalTransferred += transferLen;
                             UpdateDownloadProgress(totalSize, totalTransferred);
 
-                            // block number 0 and 1 are reserved
+                            // block number 0 and 1 are reserved, on overflow:
                             if (blockNr == 0)
                             {
-                                Abort();
                                 // set new address, so block number based address calculation will be valid
-                                SeSetAddress((uint)segment.StartAddress + (uint)transferred);
+                                status = SeSetAddress((uint)segment.StartAddress + (uint)transferred);
+                                VerifyState(status, State.DnloadIdle);
                                 blockNr = 2;
                             }
                         }
-
-                        // need to abort download before completion so a new address can be selected
-                        Abort();
-                        status = GetStatus();
-                        VerifyState(status, State.Idle);
                     }
                 }
                 finally
