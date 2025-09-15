@@ -46,4 +46,6 @@ runs:
     - name: Pack ${{ inputs.project }} to local feed
       shell: bash
       run: |
-        dotnet pack ${{ inputs.project }}/${{ inputs.project }}.csproj -c Release -o ~/localfeed
+        if [[ "${{ steps.version-check.outputs.to-pack }}" == "1" ]]; then
+          dotnet pack ${{ inputs.project }}/${{ inputs.project }}.csproj -c Release -o ~/localfeed
+        fi
