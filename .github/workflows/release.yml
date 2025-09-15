@@ -1,6 +1,7 @@
 name: .NET NuGet package release
 permissions:
   contents: write
+  packages: write
 
 on:
   push:
