@@ -689,14 +689,12 @@ namespace DeviceProgramming.Dfu
             {
                 byte altSel = memoryWithAltSel.Key;
                 var memory = memoryWithAltSel.Value;
-
                 var layout = ParseLayout(altSel);
-                int segNo = 0;
-                int lastSeg = memory.Segments.Count - 1;
+                var startAddr = memory.Segments.First().StartAddress;
+                var endAddr = memory.Segments.Last().EndAddress;
 
                 // verify memory with layout
-                if ((memory.Segments[segNo].StartAddress < layout.StartAddress) ||
-                    (memory.Segments[lastSeg].EndAddress > layout.EndAddress))
+                if ((startAddr < layout.StartAddress) || (endAddr > layout.EndAddress))
                 {
                     throw new ArgumentOutOfRangeException("sortedMemory", String.Format("Memory is out of bounds at alternate setting {0}.", altSel));
                 }
@@ -714,17 +712,13 @@ namespace DeviceProgramming.Dfu
                 {
                     VerifyState(status, State.Idle);
 
-                    // find affected blocks
-                    var startAddr = memory.Segments[segNo].StartAddress;
-                    var endAddr = memory.Segments[lastSeg].EndAddress;
-
                     int firstBlock = 0;
                     while ((layout.Blocks[firstBlock].StartAddress + layout.Blocks[firstBlock].Size) <= startAddr)
                     {
                         firstBlock++;
                     }
-                    int lastBlock = 0;
-                    while ((layout.Blocks[lastBlock].StartAddress + layout.Blocks[firstBlock].Size) <= endAddr)
+                    int lastBlock = firstBlock;
+                    while ((layout.Blocks[lastBlock].StartAddress + layout.Blocks[lastBlock].Size) <= endAddr)
                     {
                         lastBlock++;
                     }
@@ -736,7 +730,7 @@ namespace DeviceProgramming.Dfu
                         {
                             throw new InvalidOperationException("Cannot download to readonly memory block.");
                         }
-                        else if (layout.Blocks[block].Permissions.IsEraseable())
+                        if (layout.Blocks[block].Permissions.IsEraseable())
                         {
                             status = SeErase((uint)layout.Blocks[block].StartAddress);
                             VerifyState(status, State.DnloadIdle);
@@ -746,7 +740,7 @@ namespace DeviceProgramming.Dfu
                     UpdateDownloadProgress(totalSize, totalTransferred);
 
                     // download the segments to the target
-                    for (; segNo <= lastSeg; segNo++)
+                    for (int segNo = 0; segNo < memory.Segments.Count; segNo++)
                     {
                         ushort blockNr = 2;
                         int transferLen, transferred = 0;
@@ -812,11 +806,11 @@ namespace DeviceProgramming.Dfu
         private Dictionary<byte, NamedMemory> SortMemoryByAltSetting(RawMemory memory)
         {
             Dictionary<byte, NamedMemory> sortedMemory = new Dictionary<byte, NamedMemory>();
-            byte altSel;
             int segNo = 0;
 
             while (segNo < memory.Segments.Count)
             {
+                byte altSel;
                 // go through the available memories (each of which is an alternate setting)
                 for (altSel = 0; altSel < NumberOfAlternateSettings; altSel++)
                 {
