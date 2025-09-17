@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-using LibUsbDotNet;
 using DeviceProgramming.Dfu;
+using LibUsbDotNet;
+using LibUsbDotNet.Descriptors;
 using LibUsbDotNet.Info;
 using LibUsbDotNet.Main;
-using LibUsbDotNet.Descriptors;
+using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace LibUsbDfu
@@ -25,7 +25,9 @@ namespace LibUsbDfu
 
         public override string ToString()
         {
-            return device.UsbRegistryInfo.FullName;
+            return String.Format("{0:X4}:{1:X4} (S/N:{2})",
+                device.Info.Descriptor.VendorID, device.Info.Descriptor.ProductID,
+                device.Info.SerialString);
         }
 
         /// <summary>
