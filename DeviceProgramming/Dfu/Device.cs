@@ -819,6 +819,10 @@ namespace DeviceProgramming.Dfu
                             }
                         }
                     }
+
+                    // reset address to start of memory as a metasignal for completion
+                    status = SeSetAddress((uint)layout.StartAddress);
+                    VerifyState(status, State.DnloadIdle);
                 }
                 finally
                 {
