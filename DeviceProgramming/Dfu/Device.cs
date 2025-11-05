@@ -29,6 +29,16 @@ namespace DeviceProgramming.Dfu
                 : base(String.Format("Dfu state {0} wasn't reached, device returned {1} (reason: {2}).", expected.ToString(), actual.ToString(), error))
             {
             }
+
+            public InvalidStateException(IEnumerable<State> expectedStates, State actual)
+                : base(String.Format("Dfu state {0} wasn't reached, device returned {1}.", String.Join("|", expectedStates.Select(s => s.ToString())), actual.ToString()))
+            {
+            }
+
+            public InvalidStateException(IEnumerable<State> expectedStates, State actual, string error)
+                : base(String.Format("Dfu state {0} wasn't reached, device returned {1} (reason: {2}).", String.Join("|", expectedStates.Select(s => s.ToString())), actual.ToString(), error))
+            {
+            }
         }
 
         /// <summary>
@@ -441,17 +451,22 @@ namespace DeviceProgramming.Dfu
 
         private void VerifyState(Status status, State expectedState)
         {
-            if (status.State != expectedState)
+            VerifyState(status, new State[] { expectedState });
+        }
+
+        private void VerifyState(Status status, params State[] validStates)
+        {
+            if (!validStates.Contains(status.State))
             {
                 if (status.State == State.Error)
                 {
-                    var e = new InvalidStateException(expectedState, status.State, GetErrorString(status));
+                    var e = new InvalidStateException(validStates, status.State, GetErrorString(status));
                     DeviceError(this, new ErrorEventArgs(e));
                     throw e;
                 }
                 else
                 {
-                    throw new InvalidStateException(expectedState, status.State);
+                    throw new InvalidStateException(validStates, status.State);
                 }
             }
         }
@@ -716,15 +731,23 @@ namespace DeviceProgramming.Dfu
                 int totalSizeToErase = 0;
                 int erasedSize = 0;
 
-                // select this memory layout for download
-                AlternateSetting = altSel;
-
                 // ensure idle mode
                 Status status = ClearErrors();
 
+                // select this memory layout for download
+                if (AlternateSetting != altSel)
+                {
+                    if (status.State.Abortable())
+                    {
+                        Abort();
+                        status = GetStatus();
+                    }
+                    AlternateSetting = altSel;
+                }
+
                 try
                 {
-                    VerifyState(status, State.Idle);
+                    VerifyState(status, new State[] { State.Idle, State.DnloadIdle });
 
                     int firstBlock = 0;
                     while ((layout.Blocks[firstBlock].StartAddress + layout.Blocks[firstBlock].Size) <= startAddr)
