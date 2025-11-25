@@ -1,6 +1,6 @@
 # LibUsbDfu
 
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![NuGet Downloads](https://img.shields.io/nuget/dt/LibUsbDfu.svg)](https://www.nuget.org/packages/LibUsbDfu/)
 
 **LibUsbDfu** is a C# USB DFU firmware upgrade utility using [LibUsbDotNet][LibUsbDotNet] and [Mono.Options][Mono.Options].
 The program performs the entire DFU upgrade procedure - booting to update mode, downloading the firmware and manifesting it - by a single command.
