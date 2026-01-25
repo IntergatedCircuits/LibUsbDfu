@@ -22,16 +22,25 @@ namespace DeviceProgramming.Memory
             {
                 return false;
             }
-            else if (Segments.Any((s) => s.TryAppend(newSegment) || newSegment.TryAppend(s)))
+            for (int i = 0; i < Segments.Count; i++)
             {
-                return true;
+                var segment = Segments[i];
+                if (newSegment.TryAppend(segment))
+                {
+                    // the new segment now includes the old one
+                    Segments[i] = newSegment;
+                    return true;
+                }
+                if (segment.TryAppend(newSegment))
+                {
+                    // the old segment now includes the new one
+                    return true;
+                }
             }
-            else
-            {
-                Segments.Add(newSegment);
-                Segments.Sort();
-                return true;
-            }
+            // no overlaps or extensions, just add it
+            Segments.Add(newSegment);
+            Segments.Sort();
+            return true;
         }
 
         public override bool Equals(object obj)
