@@ -22,7 +22,7 @@ namespace DeviceProgramming.Memory
             {
                 return false;
             }
-            else if (Segments.Any((s) => s.TryAppend(newSegment) || newSegment.TryAppend(s)))
+            else if (Segments.Any((s) => s.TryMerge(newSegment)))
             {
                 return true;
             }

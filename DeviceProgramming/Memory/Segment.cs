@@ -65,19 +65,25 @@ namespace DeviceProgramming.Memory
             return this.StartAddress == (other.EndAddress + 1);
         }
 
-        public bool TryAppend(Segment other)
+        public bool TryMerge(Segment other)
         {
-            if (!other.Extends(this))
-            {
-                return false;
-            }
-            else
+            if (other.Extends(this))
             {
                 int dlen = data.Length;
-                Array.Resize<byte>(ref data, data.Length + other.Data.Length);
+                Array.Resize<byte>(ref data, dlen + other.Data.Length);
                 Array.Copy(other.Data, 0, data, dlen, other.Data.Length);
                 return true;
             }
+            if (Extends(other))
+            {
+                byte[] newData = new byte[other.Data.Length + data.Length];
+                Array.Copy(other.Data, 0, newData, 0, other.Data.Length);
+                Array.Copy(data, 0, newData, other.Data.Length, data.Length);
+                data = newData;
+                StartAddress = other.StartAddress;
+                return true;
+            }
+            return false;
         }
 
         public bool ContainsKey(UInt64 key)
