@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 
 namespace DeviceProgramming
@@ -12,6 +13,13 @@ namespace DeviceProgramming
         /// <returns>The struct created by the byte array input</returns>
         public static T ToStruct<T>(this byte[] bytes) where T : struct
         {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+
+            int size = Marshal.SizeOf(typeof(T));
+            if (bytes.Length < size)
+                throw new ArgumentException("Byte array is too small for the requested structure.", nameof(bytes));
+
             T s;
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
             try

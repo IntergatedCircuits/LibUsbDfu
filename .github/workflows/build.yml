@@ -31,6 +31,9 @@ jobs:
       with:
         project: DeviceProgramming
         
+    - name: Test DeviceProgramming
+      run: dotnet test DeviceProgramming.Tests/DeviceProgramming.Tests.csproj -c Release --verbosity normal --logger "console;verbosity=normal"
+
     - name: Build LibUsbDfu
       uses: ./.github/template/build-package
       with:
