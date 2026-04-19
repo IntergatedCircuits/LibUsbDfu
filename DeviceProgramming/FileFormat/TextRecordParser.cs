@@ -135,7 +135,14 @@ namespace DeviceProgramming.FileFormat
                     reladdr += (uint)MemoryBlocks[i].Length;
                 }
                 // add it to the image, and empty the context
-                Memory.TryAddSegment(new Segment(SegmentStartAddress, memseg));
+                if (!Memory.TryAddSegment(new Segment(SegmentStartAddress, memseg)))
+                {
+                    throw new ArgumentException(String.Format(
+                        "The selected record file has overlapping memory segments at line {0} (flushed segment range 0x{1:X}-0x{2:X}).",
+                        CurrentLine,
+                        SegmentStartAddress,
+                        SegmentEndAddress));
+                }
                 MemoryBlocks.Clear();
             }
         }
