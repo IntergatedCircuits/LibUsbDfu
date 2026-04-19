@@ -75,6 +75,9 @@ namespace DeviceProgramming.FileFormat
                 {
                     throw new ArgumentException("The selected file is empty or has invalid format.");
                 }
+
+                // flush any segment that was not terminated by an S7/S8/S9 record
+                parser.FlushSegment();
                 return parser.Memory;
             }
         }
