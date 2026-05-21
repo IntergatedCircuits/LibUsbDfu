@@ -635,7 +635,7 @@ namespace DeviceProgramming.Dfu
         private static readonly Regex SeMemoryLayoutRegex = new Regex(
                 @"^@(?<name>[\w\s]*[\w]+)\s*
                  /0x(?<address>[A-F0-9]{1,8})
-                 /(\d+)\*(\d+)([\x20KM]{1})([a-g]{1})(?:,(\d+)\*(\d+)([\x20KM]{1})([a-g]{1}))*$",
+                 /(\d+)\*(\d+)([\x20KM]?)([a-g]{1})(?:,(\d+)\*(\d+)([\x20KM]?)([a-g]{1}))*$",
                 RegexOptions.Compiled | RegexOptions.IgnorePatternWhitespace);
 
         /// <summary>
@@ -671,17 +671,22 @@ namespace DeviceProgramming.Dfu
                 uint blockNo = UInt32.Parse(result.Groups[groupoff + 1].Captures[i].Value);
                 uint blockSize = UInt32.Parse(result.Groups[groupoff + 2].Captures[i].Value);
 
-                // size modifiers (K for kilo-, M for Mega)
-                switch (result.Groups[groupoff + 3].Captures[i].Value[0])
+                string sizeModifier = result.Groups[groupoff + 3].Captures[i].Value;
+
+                if (!string.IsNullOrEmpty(sizeModifier))
                 {
-                    case 'K':
-                        blockSize <<= 10;
-                        break;
-                    case 'M':
-                        blockSize <<= 20;
-                        break;
-                    default:
-                        break;
+                    // size modifiers (K for kilo-, M for Mega)
+                    switch (sizeModifier[0])
+                    {
+                        case 'K':
+                            blockSize <<= 10;
+                            break;
+                        case 'M':
+                            blockSize <<= 20;
+                            break;
+                        default:
+                            break;
+                    }
                 }
 
                 // the permissions are encoded in the lowest 3 bits of the ASCII character...
