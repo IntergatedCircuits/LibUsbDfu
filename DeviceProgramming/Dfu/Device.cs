@@ -653,7 +653,7 @@ namespace DeviceProgramming.Dfu
         /// </summary>
         /// <param name="dfuSeFormat">DFU alternate setting string description</param>
         /// <returns>The parsed memory layout</returns>
-        private NamedLayout ParseLayout(string dfuSeFormat)
+        public static NamedLayout ParseLayout(string dfuSeFormat)
         {
             var result = SeMemoryLayoutRegex.Match(dfuSeFormat);
             if (!result.Success)
