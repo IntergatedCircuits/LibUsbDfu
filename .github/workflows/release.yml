@@ -1,7 +1,4 @@
 name: .NET NuGet package release
-permissions:
-  contents: write
-  packages: write
 
 on:
   push:
@@ -10,6 +7,10 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
+      packages: write
+      id-token: write  # enable GitHub OIDC token issuance for this job
     runs-on: ubuntu-latest
 
     steps:
@@ -36,8 +37,14 @@ jobs:
       with:
         project: LibUsbDfu
 
+    - name: NuGet login (OIDC -> temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+        user: ${{ secrets.NUGET_USER }}
+
     - name: Push packages to NuGet.org
-      run: dotnet nuget push ~/localfeed/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push ~/localfeed/*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
 
     - name: Push packages to GitHub Packages
       run: |
